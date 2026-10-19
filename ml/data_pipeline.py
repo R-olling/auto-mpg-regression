@@ -1,4 +1,5 @@
 """Auto MPG 数据流水线：..."""
+
 from __future__ import annotations
 
 import argparse
@@ -37,7 +38,7 @@ def read_raw(raw_path: Path) -> pd.DataFrame:
 
 
 def coerce_horsepower(df: pd.DataFrame) -> pd.DataFrame:
-    """"?" -> NaN，再转成数值列。"""
+    """ "?" -> NaN，再转成数值列。"""
     out = df.copy()
     out["horsepower"] = pd.to_numeric(out["horsepower"], errors="coerce")
     return out

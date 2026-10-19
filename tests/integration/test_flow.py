@@ -1,4 +1,5 @@
 """集成测试：TestClient 走完整链路（HTTP -> 校验 -> 特征工程 -> 模型 -> 响应）。"""
+
 from __future__ import annotations
 
 from app.features import FEATURE_COLUMNS

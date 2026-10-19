@@ -64,7 +64,7 @@ feature/*  ──PR──>  dev  ──PR──>  staging  ──PR──>  main
 
 | 事件 | 触发的 job | 内容 |
 |---|---|---|
-| PR → `dev` / `staging` / `main` | `ci` | ruff check + pytest + docker build |
+| PR → `dev` / `staging` / `main` | `ci` | black --check + ruff check + pytest + docker build |
 | push → `staging` | `ci` + `deploy-staging` | 上述检查 + staging secrets 生成 `.env` + 构建 `:staging` 镜像 |
 | push → `main` | `ci` + `deploy-production` | 上述检查 + production secrets 生成 `.env` + 构建 `:production` 镜像 |
 | push → `feature/*` | 不触发 | 功能分支只在开 PR 时运行检查 |
@@ -111,6 +111,7 @@ baseline 与 improved 共用同一批 **79 条**测试记录；中位数与缩�
 ```
 auto-mpg-regression/
 ├── app/                        FastAPI 服务
+│   ├── config.py               环境配置集中读取 + 必需变量校验（fail fast）
 │   ├── features.py             特征契约（9 维，训练/服务共用）
 │   ├── schemas.py              Pydantic 请求/响应与边界校验
 │   ├── model.py                模型加载（lru_cache，缺文件快速失败）
@@ -127,6 +128,7 @@ auto-mpg-regression/
 ├── data/                       DVC 指针（CSV 本体不进 git）
 ├── tests/                      unit / api / integration（27 个用例）
 ├── .github/workflows/ci.yml    CI + 两阶段 CD
+├── .pre-commit-config.yaml     本地预检（black + ruff）
 ├── Dockerfile / .dockerignore
 ├── requirements.txt / requirements-dev.txt / pyproject.toml / pytest.ini
 ├── README.md / DEPLOYMENT.md / .env.example
@@ -134,17 +136,36 @@ auto-mpg-regression/
 
 ## 环境变量
 
-见 `.env.example`：
+见 `.env.example`。`APP_ENV` 与 `MODEL_VERSION` 是**启动必需变量**，由 `app/config.py`
+在启动时校验，缺失即抛 `ConfigError` 拒绝启动（fail fast，对应 12-Factor 要求）；
+`MODEL_PATH` 有默认值，不属于必需变量。
 
 | 变量 | 默认 | 说明 |
 |---|---|---|
-| `APP_ENV` | `development` | 运行环境标识，构建期由 `--build-arg` 注入 |
-| `MODEL_VERSION` | `local-dev` | 模型版本标识，同上 |
+| `APP_ENV` | 无（必需） | 运行环境标识，构建期由 `--build-arg` 注入 |
+| `MODEL_VERSION` | 无（必需） | 模型版本标识，同上 |
 | `MODEL_PATH` | `app/model/linear_regression.pkl` | 运行期可覆盖的模型路径 |
 
-## 测试与检查
+本地开发：`cp .env.example .env` 后填写（`.env` 已被 `.gitignore` 排除）；
+容器 / CI：无 `.env`，值由 Docker ENV、`--build-arg` 或 GitHub Secrets 注入。
+
+## 代码质量与测试
+
+工具分工：**Black 管排版**（formatter）、**Ruff 管检查**（linter）、**pytest 管功能**（测试）。
+三者行宽统一为 100，避免两个工具互相打架。
 
 ```bash
-.\.venv\Scripts\python.exe -m pytest -q          # 27 passed
+.\.venv\Scripts\python.exe -m black --check .    # All done! 14 files would be left unchanged
 .\.venv\Scripts\python.exe -m ruff check .       # All checks passed
+.\.venv\Scripts\python.exe -m pytest -q          # 27 passed
 ```
+
+本地预检（推荐，每个新克隆装一次）：
+
+```bash
+.\.venv\Scripts\python.exe -m pre_commit install
+.\.venv\Scripts\python.exe -m pre_commit run --all-files
+```
+
+CI 里 `ci` job 的步骤顺序是：checkout → setup-python → install → **black** → **ruff** → **pytest** → docker build，
+任何一步失败都会阻止合并（分支保护要求 `ci` 通过）。
