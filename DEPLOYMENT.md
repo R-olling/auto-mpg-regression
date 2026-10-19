@@ -7,7 +7,7 @@
 
 - **触发**：PR 合并到 `staging` 分支（即 push 到 `staging`）
 - **流程**：
-  1. `ci` job 先跑（ruff + pytest + docker build），全绿才进入下一步（`needs: ci`）
+  1. `ci` job 先跑（black --check + ruff + pytest + docker build），全绿才进入下一步（`needs: ci`）
   2. `deploy-staging` job 用 GitHub Secret `STAGING_MODEL_VERSION` 现场生成 `.env`：
      ```
      APP_ENV=staging

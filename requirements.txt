@@ -7,3 +7,4 @@ numpy==2.5.4
 joblib==1.6.0
 matplotlib==3.11.2
 mlflow==3.17.1
+python-dotenv==1.2.4

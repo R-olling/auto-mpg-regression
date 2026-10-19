@@ -1,4 +1,5 @@
 """模型单元测试：模型可加载、预测值稳定、行为单调、特征契约一致。"""
+
 from __future__ import annotations
 
 import pytest
