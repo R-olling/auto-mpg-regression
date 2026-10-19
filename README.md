@@ -126,7 +126,7 @@ auto-mpg-regression/
 │   ├── PROVENANCE.md           数据-代码-模型溯源链
 │   └── registry/current_model.md  生产模型登记卡
 ├── data/                       DVC 指针（CSV 本体不进 git）
-├── tests/                      unit / api / integration（27 个用例）
+├── tests/                      unit / api / integration（35 个用例）
 ├── .github/workflows/ci.yml    CI + 两阶段 CD
 ├── .pre-commit-config.yaml     本地预检（black + ruff）
 ├── Dockerfile / .dockerignore
@@ -157,7 +157,7 @@ auto-mpg-regression/
 ```bash
 .\.venv\Scripts\python.exe -m black --check .    # All done! 14 files would be left unchanged
 .\.venv\Scripts\python.exe -m ruff check .       # All checks passed
-.\.venv\Scripts\python.exe -m pytest -q          # 27 passed
+.\.venv\Scripts\python.exe -m pytest -q          # 35 passed
 ```
 
 本地预检（推荐，每个新克隆装一次）：
