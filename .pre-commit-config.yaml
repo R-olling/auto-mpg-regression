@@ -1,0 +1,16 @@
+# 本地预检钩子：git commit 时自动跑 black + ruff，把问题拦在推送前。
+# 安装（每个新克隆执行一次）：
+#   pip install pre-commit
+#   pre-commit install
+repos:
+  - repo: https://github.com/psf/black
+    rev: 26.10.1
+    hooks:
+      - id: black
+        language_version: python3
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.17.1
+    hooks:
+      # ruff-pre-commit 会自动在命令后追加待检查的文件名，
+      # 因此这里不能再写 args: [check, .]（否则会变成 `ruff check check .`）。
+      - id: ruff

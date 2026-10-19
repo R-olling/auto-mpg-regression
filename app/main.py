@@ -1,4 +1,5 @@
 """FastAPI 预测服务入口：启动时加载模型，提供 /predict、/health、/model-info 与静态页面。"""
+
 from __future__ import annotations
 
 from contextlib import asynccontextmanager
@@ -6,6 +7,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.responses import FileResponse
 
+from app.config import get_settings
 from app.features import FEATURE_COLUMNS, payload_to_features, to_frame
 from app.model import get_model, get_model_info
 from app.schemas import PredictionRequest, PredictionResponse
@@ -13,7 +15,10 @@ from app.schemas import PredictionRequest, PredictionResponse
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    # 启动时预热模型：文件缺失或损坏时服务直接起不来（快速失败，避免半死状态）
+    # 启动时两道 fail-fast 关卡，任一不过服务直接起不来（避免半死状态）：
+    # 1) 配置校验：APP_ENV / MODEL_VERSION 缺失 -> ConfigError（12-Factor 要求）
+    # 2) 模型预热：文件缺失或损坏 -> FileNotFoundError
+    get_settings()
     get_model()
     yield
 

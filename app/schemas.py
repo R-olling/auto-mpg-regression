@@ -1,4 +1,5 @@
 """请求/响应模型与校验规则：本文件只定义契约，不做任何模型或数据库访问。"""
+
 from __future__ import annotations
 
 from pydantic import BaseModel, ConfigDict, Field
