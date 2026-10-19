@@ -1,0 +1,71 @@
+name: CI/CD
+
+# 触发规则（与 README 的分支触发矩阵对应）：
+# PR -> dev / staging / main ：只跑 ci，失败即禁止合并
+# push -> staging ：ci 通过后，用 staging 专属 secrets 生成 .env，构建 staging 镜像
+# push -> main ：ci 通过后，用 production 专属 secrets 生成 .env，构建 production 镜像
+on:
+  pull_request:
+    branches: [dev, staging, main]
+  push:
+    branches: [staging, main]
+
+permissions:
+  contents: read
+
+jobs:
+  ci:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v7
+      - name: Set up Python
+        uses: actions/setup-python@v7
+        with:
+          python-version: "3.12"
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -r requirements-dev.txt
+      - name: Lint with ruff
+        run: ruff check .
+      - name: Run tests
+        run: python -m pytest -q
+      - name: Build Docker image
+        run: docker build -t mpg-app:ci .
+
+  deploy-staging:
+    needs: ci
+    if: github.event_name == 'push' && github.ref == 'refs/heads/staging'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - name: Generate staging .env from GitHub secrets
+        run: |
+          printf 'APP_ENV=staging\nMODEL_VERSION=%s\n' \
+            "${{ secrets.STAGING_MODEL_VERSION }}" > .env
+      - name: Build staging image
+        run: |
+          set -a; . ./.env; set +a
+          docker build \
+            --build-arg APP_ENV="$APP_ENV" \
+            --build-arg MODEL_VERSION="$MODEL_VERSION" \
+            -t "${{ github.repository }}:staging" .
+
+  deploy-production:
+    needs: ci
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - name: Generate production .env from GitHub secrets
+        run: |
+          printf 'APP_ENV=production\nMODEL_VERSION=%s\n' \
+            "${{ secrets.PRODUCTION_MODEL_VERSION }}" > .env
+      - name: Build production image
+        run: |
+          set -a; . ./.env; set +a
+          docker build \
+            --build-arg APP_ENV="$APP_ENV" \
+            --build-arg MODEL_VERSION="$MODEL_VERSION" \
+            -t "${{ github.repository }}:production" .
