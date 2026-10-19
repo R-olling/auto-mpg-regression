@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Auto MPG 油耗预测</title>
+<style>
+  body { font-family: "Microsoft YaHei", sans-serif; max-width: 560px; margin: 40px auto; padding: 0 16px; }
+  h1 { font-size: 22px; }
+  label { display: block; margin: 10px 0 4px; font-size: 14px; }
+  input { width: 100%; padding: 6px; box-sizing: border-box; }
+  button { margin-top: 16px; padding: 8px 24px; }
+  #result { margin-top: 20px; font-size: 18px; color: #b30000; }
+</style>
+</head>
+<body>
+<h1>Auto MPG 油耗预测（线性回归）</h1>
+<form id="form">
+  <label>气缸数 cylinders</label><input name="cylinders" type="number" value="4">
+  <label>排量 displacement（立方英寸）</label><input name="displacement" type="number" value="120">
+  <label>马力 horsepower</label><input name="horsepower" type="number" value="79">
+  <label>车重 weight（磅）</label><input name="weight" type="number" value="2625">
+  <label>加速 acceleration（秒）</label><input name="acceleration" type="number" value="18.6">
+  <label>年份 model_year（1970-1982）</label><input name="model_year" type="number" min="1970" max="1982" value="1982">
+  <label>产地 origin（1=美国 2=欧洲 3=日本）</label><input name="origin" type="number" value="1">
+  <button type="submit">预测油耗</button>
+</form>
+<div id="result"></div>
+<script>
+document.getElementById("form").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const payload = Object.fromEntries(new FormData(e.target).entries());
+  for (const k of Object.keys(payload)) payload[k] = Number(payload[k]);
+  const resp = await fetch("/predict", {
+    method: "POST",
+    headers: {"Content-Type": "application/json"},
+    body: JSON.stringify(payload),
+  });
+  const data = await resp.json();
+  const box = document.getElementById("result");
+  if (resp.ok) {
+    box.textContent = `预测油耗：${data.mpg} mpg（模型 ${data.model_version} / 环境 ${data.app_env}）`;
+  } else {
+    box.textContent = `输入被拒绝（HTTP ${resp.status}）：${JSON.stringify(data.detail)}`;
+  }
+});
+</script>
+</body>
+</html>
