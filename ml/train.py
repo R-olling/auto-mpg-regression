@@ -106,9 +106,7 @@ def make_fixed_split(raw: pd.DataFrame, test_size: float, random_state: int):
     df = coerce_horsepower(df)
     missing = df[df["horsepower"].isna()].copy()
     complete = df[df["horsepower"].notna()].copy()
-    c_train, c_test = train_test_split(
-        complete, test_size=test_size, random_state=random_state
-    )
+    c_train, c_test = train_test_split(complete, test_size=test_size, random_state=random_state)
     return c_train, c_test, missing
 
 
